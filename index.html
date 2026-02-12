@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Valentine?</title>
+  <style>
+    :root{
+      --bg1:#ffd6e7;
+      --bg2:#fff5fa;
+      --card:#ffffffcc;
+      --yes:#ff3b7a;
+      --yes2:#ff6aa2;
+      --text:#1f1f1f;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: radial-gradient(1200px 700px at 50% 15%, var(--bg2), var(--bg1));
+      color:var(--text);
+      overflow:hidden;
+    }
+    .wrap{
+      width:min(540px,92vw);
+      padding:22px;
+      border-radius:24px;
+      background: var(--card);
+      box-shadow: 0 20px 50px rgba(0,0,0,.12);
+      backdrop-filter: blur(10px);
+      position:relative;
+    }
+    .top{
+      text-align:center;
+      padding:6px 6px 14px;
+    }
+    .emoji{
+      font-size:34px;
+      line-height:1;
+      margin-bottom:8px;
+    }
+    h1{
+      font-size: clamp(22px, 4.5vw, 30px);
+      margin:0;
+      font-weight:800;
+    }
+    .sub{
+      margin-top:8px;
+      opacity:.75;
+      font-size:14px;
+    }
+
+    .stage{
+      margin-top:14px;
+      height: 260px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.6));
+      border: 1px solid rgba(255,255,255,.9);
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .btn{
+      border:0;
+      cursor:pointer;
+      font-weight:800;
+      border-radius: 14px;
+      padding: 14px 22px;
+      font-size: 18px;
+      box-shadow: 0 14px 28px rgba(0,0,0,.14);
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .12s ease, box-shadow .12s ease;
+      position:absolute;
+      touch-action:none; /* helps with touch hover simulation */
+    }
+    .btn:active{
+      transform: translateY(1px) scale(0.99);
+      box-shadow: 0 10px 18px rgba(0,0,0,.14);
+    }
+
+    #yes{
+      background: linear-gradient(180deg, var(--yes2), var(--yes));
+      color:#fff;
+      left: 50%;
+      top: 55%;
+      transform: translate(-50%,-50%) scale(1);
+      width: 170px;
+      height: 58px;
+    }
+
+    #no{
+      background: #f1f1f1;
+      color:#333;
+      left: 50%;
+      top: 76%;
+      transform: translate(-50%,-50%);
+      width: 140px;
+      height: 46px;
+      box-shadow: 0 12px 22px rgba(0,0,0,.10);
+    }
+
+    .hint{
+      position:absolute;
+      bottom:14px;
+      width:100%;
+      text-align:center;
+      font-style:italic;
+      opacity:.65;
+      font-size:14px;
+      pointer-events:none;
+    }
+
+    .toast{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background: rgba(0,0,0,.35);
+    }
+    .toast .modal{
+      width:min(520px,92vw);
+      border-radius:22px;
+      background:#fff;
+      padding:22px;
+      box-shadow: 0 22px 60px rgba(0,0,0,.25);
+      text-align:center;
+    }
+    .modal h2{margin:10px 0 6px; font-size:26px}
+    .modal p{margin:0 0 14px; opacity:.8}
+    .close{
+      background: linear-gradient(180deg, #7cffa9, #18c56d);
+      color:#05351e;
+      border:0;
+      padding:12px 18px;
+      border-radius:14px;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow: 0 14px 28px rgba(0,0,0,.14);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="emoji">💘</div>
+      <h1><span id="name">Priya</span>, will you be my valentine?</h1>
+      <div class="sub">You have only one correct answer 😌</div>
+    </div>
+
+    <div class="stage" id="stage">
+      <button class="btn" id="yes">Yes 💞</button>
+      <button class="btn" id="no">No 🙈</button>
+      <div class="hint">Just say Yes already!</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <div class="modal">
+      <div style="font-size:44px;">🥰</div>
+      <h2>Yay! Best decision ever 💖</h2>
+      <p id="successText">See you for a date! 🍫🌹</p>
+      <button class="close" id="close">Aww okay 😄</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== Customize these =====
+    const GIRLFRIEND_NAME = "Priya";           // change name
+    const SUCCESS_MESSAGE = "See you for a date! 🍫🌹"; // change message
+    // ===========================
+
+    document.getElementById("name").textContent = GIRLFRIEND_NAME;
+    document.getElementById("successText").textContent = SUCCESS_MESSAGE;
+
+    const stage = document.getElementById("stage");
+    const yesBtn = document.getElementById("yes");
+    const noBtn  = document.getElementById("no");
+    const toast  = document.getElementById("toast");
+    const close  = document.getElementById("close");
+
+    let escapes = 0;
+    let yesScale = 1;
+
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function stageRect(){ return stage.getBoundingClientRect(); }
+
+    function setNoPosition(x, y){
+      const r = stageRect();
+      const btnW = noBtn.offsetWidth;
+      const btnH = noBtn.offsetHeight;
+
+      // keep inside stage with padding
+      const pad = 10;
+      const left = clamp(x, pad, (r.width - btnW - pad));
+      const top  = clamp(y, pad, (r.height - btnH - pad));
+
+      noBtn.style.left = left + "px";
+      noBtn.style.top  = top + "px";
+      noBtn.style.transform = "translate(0,0)";
+    }
+
+    function randomNoFarFrom(pointerX, pointerY){
+      const r = stageRect();
+      const btnW = noBtn.offsetWidth;
+      const btnH = noBtn.offsetHeight;
+
+      // pointer coords relative to stage
+      const px = pointerX - r.left;
+      const py = pointerY - r.top;
+
+      // Try a few random spots and pick one farthest
+      let best = {x: 0, y: 0, d: -1};
+      for(let i=0;i<10;i++){
+        const x = Math.random() * (r.width - btnW);
+        const y = Math.random() * (r.height - btnH);
+        const dx = (x + btnW/2) - px;
+        const dy = (y + btnH/2) - py;
+        const d = Math.hypot(dx,dy);
+        if(d > best.d) best = {x,y,d};
+      }
+      setNoPosition(best.x, best.y);
+    }
+
+    function growYes(){
+      // grows faster over time, capped
+      yesScale = Math.min(2.8, yesScale + (escapes < 6 ? 0.16 : 0.22));
+      yesBtn.style.transform = `translate(-50%,-50%) scale(${yesScale})`;
+    }
+
+    function makeNoHarder(){
+      // After enough escapes, shrink "No" a bit too (optional)
+      if(escapes >= 8){
+        const scale = Math.max(0.72, 1 - (escapes-8)*0.05);
+        noBtn.style.transform = `translate(0,0) scale(${scale})`;
+      }
+    }
+
+    function pointerNearNo(clientX, clientY){
+      const b = noBtn.getBoundingClientRect();
+      const cx = (b.left + b.right)/2;
+      const cy = (b.top + b.bottom)/2;
+
+      const dist = Math.hypot(clientX - cx, clientY - cy);
+
+      // "danger radius" grows as Yes gets bigger so No becomes impossible
+      const danger = 90 + escapes * 8;
+      return dist < danger;
+    }
+
+    function escapeNo(clientX, clientY){
+      escapes++;
+      randomNoFarFrom(clientX, clientY);
+      growYes();
+      makeNoHarder();
+    }
+
+    // Desktop: run away when mouse is near
+    window.addEventListener("mousemove", (e) => {
+      if(pointerNearNo(e.clientX, e.clientY)){
+        escapeNo(e.clientX, e.clientY);
+      }
+    });
+
+    // Mobile: treat touchmove as the "cursor"
+    window.addEventListener("touchmove", (e) => {
+      const t = e.touches && e.touches[0];
+      if(!t) return;
+      if(pointerNearNo(t.clientX, t.clientY)){
+        escapeNo(t.clientX, t.clientY);
+      }
+    }, {passive:true});
+
+    // Also run away if they try to tap "No"
+    noBtn.addEventListener("pointerdown", (e) => {
+      escapeNo(e.clientX, e.clientY);
+    });
+
+    // Center initial position properly after layout
+    function initPositions(){
+      // reset No to a nice starting spot
+      const r = stageRect();
+      setNoPosition((r.width/2) - 70, (r.height*0.72) - 23);
+    }
+    window.addEventListener("load", initPositions);
+    window.addEventListener("resize", initPositions);
+
+    yesBtn.addEventListener("click", () => {
+      toast.style.display = "flex";
+    });
+    close.addEventListener("click", () => {
+      toast.style.display = "none";
+    });
+  </script>
+</body>
+</html>
